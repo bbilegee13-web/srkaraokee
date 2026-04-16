@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>SR Karaoke</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f5;color:#1a1a1a;font-size:15px;padding-bottom:80px}
+.header{background:#fff;border-bottom:1px solid #e5e5e5;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:10}
+.header-title{font-size:18px;font-weight:700}
+.header-time{font-size:13px;color:#666}
+.tabs{display:flex;background:#fff;border-bottom:1px solid #e5e5e5;overflow-x:auto;position:sticky;top:49px;z-index:9}
+.tab{padding:12px 0;font-size:14px;cursor:pointer;border:none;border-bottom:3px solid transparent;color:#666;background:none;white-space:nowrap;font-weight:500;flex:1;text-align:center}
+.tab.active{color:#1a1a1a;border-bottom-color:#1a1a1a}
+.content{padding:16px;max-width:600px;margin:0 auto}
+.page{display:none}.page.active{display:block}
+.section-label{font-size:12px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:0.8px;margin:18px 0 10px}
+.section-label:first-child{margin-top:0}
+.room-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:4px}
+.room-card{background:#fff;border:1.5px solid #e5e5e5;border-radius:14px;padding:12px 8px;cursor:pointer;text-align:center;transition:all 0.15s;-webkit-tap-highlight-color:transparent}
+.room-card:active{transform:scale(0.97)}
+.room-card.occupied{background:#fff5f5;border-color:#ffcdd2;cursor:default}
+.room-card.warning{background:#fff8e1;border-color:#ffe082}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+.pulsing{animation:pulse 1s infinite}
+.rc-label{font-size:10px;color:#bbb;margin-bottom:2px;font-weight:600;text-transform:uppercase}
+.room-name{font-size:14px;font-weight:700;color:#1a1a1a}
+.rc-status{font-size:11px;margin-top:5px;padding:3px 8px;border-radius:10px;display:inline-block;font-weight:600}
+.free{background:#e8f5e9;color:#2e7d32}
+.busy{background:#ffebee;color:#c62828}
+.rc-rate{font-size:10px;color:#bbb;margin-top:4px}
+.rc-timer{font-size:12px;color:#c62828;font-weight:700;margin-top:3px}
+.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:4px}
+.metric{background:#fff;border-radius:14px;padding:14px 10px;text-align:center;border:1px solid #e5e5e5}
+.metric-label{font-size:10px;color:#999;margin-bottom:5px;font-weight:600;text-transform:uppercase}
+.metric-val{font-size:17px;font-weight:700;color:#1a1a1a}
+.card{background:#fff;border-radius:14px;padding:16px;margin-bottom:12px;border:1px solid #e5e5e5}
+.form-row{margin-bottom:14px}
+.form-row label{display:block;font-size:13px;color:#666;margin-bottom:5px;font-weight:600}
+.form-row input,.form-row select{width:100%;padding:11px 12px;border:1.5px solid #e5e5e5;border-radius:10px;font-size:15px;color:#1a1a1a;background:#fff;outline:none;-webkit-appearance:none}
+.form-row input:focus,.form-row select:focus{border-color:#1a1a1a}
+.btn{padding:10px 18px;border-radius:10px;font-size:14px;cursor:pointer;border:1.5px solid #e5e5e5;background:#fff;color:#1a1a1a;font-weight:600;-webkit-tap-highlight-color:transparent}
+.btn:active{opacity:0.8}
+.btn-primary{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
+.btn-success{background:#e8f5e9;color:#2e7d32;border-color:#a5d6a7}
+.btn-warn{background:#fff8e1;color:#e65100;border-color:#ffcc80}
+.btn-danger{background:#ffebee;color:#c62828;border-color:#ffcdd2}
+.btn-info{background:#e3f2fd;color:#1565c0;border-color:#90caf9}
+.btn-sm{padding:6px 14px;font-size:13px}
+.btn-xs{padding:4px 10px;font-size:12px}
+.pkg-card{border:1.5px solid #e5e5e5;border-radius:12px;padding:13px;margin-bottom:8px;cursor:pointer;transition:all 0.15s}
+.pkg-card.selected{border-color:#1a1a1a;background:#f9f9f9}
+.pkg-name{font-size:14px;font-weight:700;color:#1a1a1a}
+.pkg-desc{font-size:13px;color:#666;margin-top:2px}
+.cat-tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.cat-btn{padding:7px 14px;border-radius:20px;font-size:13px;cursor:pointer;border:1.5px solid #e5e5e5;background:#fff;color:#666;font-weight:500}
+.cat-btn.active{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
+.menu-item{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid #f5f5f5}
+.menu-item:last-child{border-bottom:none}
+.mi-name{font-size:14px;color:#1a1a1a;font-weight:500}
+.mi-price{font-size:12px;color:#999;margin-top:2px}
+.qty-ctrl{display:flex;align-items:center;gap:10px}
+.qty-val{min-width:24px;text-align:center;font-size:16px;font-weight:700}
+.total-box{background:#f9f9f9;border-radius:12px;padding:14px;margin-top:12px}
+.total-line{display:flex;justify-content:space-between;font-size:14px;padding:4px 0;color:#666}
+.total-line.big{font-size:18px;font-weight:700;color:#1a1a1a;border-top:1px solid #e5e5e5;padding-top:10px;margin-top:6px}
+.pay-row{display:flex;gap:8px;margin-bottom:14px}
+.pay-btn{flex:1;padding:11px 6px;border-radius:10px;font-size:13px;cursor:pointer;border:1.5px solid #e5e5e5;background:#fff;color:#666;text-align:center;font-weight:600}
+.pay-btn.selected{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
+.action-row{display:flex;gap:8px;flex-wrap:wrap}
+.modal-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:100;align-items:flex-end;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal-sheet{background:#fff;border-radius:22px 22px 0 0;width:100%;max-width:600px;max-height:88vh;overflow-y:auto;padding:20px 16px 30px}
+.modal-handle{width:40px;height:4px;background:#e0e0e0;border-radius:2px;margin:0 auto 18px}
+.modal-title{font-size:17px;font-weight:700;margin-bottom:16px}
+.sess-name{font-size:18px;font-weight:700}
+.sess-sub{font-size:13px;color:#666;margin-top:3px}
+.timer-big{font-size:32px;font-weight:800;line-height:1}
+.timer-warn{color:#c62828}
+.food-summary{font-size:12px;color:#999;margin-top:5px;line-height:1.7}
+.divider{height:1px;background:#f0f0f0;margin:14px 0}
+.empty-state{text-align:center;padding:50px 20px;color:#bbb}
+.empty-icon{font-size:48px;margin-bottom:12px}
+.nyt-song-ctrl{display:flex;align-items:center;gap:14px;margin-top:8px}
+.nyt-song-num{font-size:26px;font-weight:800;min-width:36px;text-align:center}
+/* REPORT */
+.date-group{margin-bottom:20px}
+.date-header{font-size:13px;font-weight:700;color:#666;padding:8px 12px;background:#f5f5f5;border-radius:8px;margin-bottom:8px;display:flex;justify-content:space-between}
+.date-income{color:#2e7d32}
+.history-row{padding:12px 0;border-bottom:1px solid #f5f5f5;display:flex;justify-content:space-between;align-items:flex-start}
+.history-row:last-child{border-bottom:none}
+.hr-name{font-size:14px;font-weight:600;color:#1a1a1a}
+.hr-detail{font-size:12px;color:#bbb;margin-top:3px;line-height:1.5}
+.hr-amount{font-size:16px;font-weight:700;color:#1a1a1a;white-space:nowrap;margin-left:12px}
+.report-summary{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px}
+@media(max-width:380px){.room-grid{grid-template-columns:repeat(2,1fr)}.metrics{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<!-- LOGIN -->
+<div id="login-screen" style="position:fixed;inset:0;background:#f5f5f5;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;padding:24px">
+  <div style="font-size:32px;font-weight:900;color:#c62828;letter-spacing:2px;margin-bottom:6px">SR KARAOKE</div>
+  <div style="font-size:14px;color:#666;margin-bottom:32px">Системд нэвтрэх</div>
+  <div style="background:#fff;border:1px solid #e5e5e5;border-radius:16px;padding:24px;width:100%;max-width:340px">
+    <div style="font-size:16px;font-weight:700;margin-bottom:16px">Нэвтрэх</div>
+    <input id="li-user" type="text" placeholder="Хэрэглэгчийн нэр" autocomplete="off"
+      style="width:100%;padding:12px;border:1.5px solid #e5e5e5;border-radius:10px;font-size:15px;outline:none;margin-bottom:12px">
+    <input id="li-pass" type="password" placeholder="Нууц үг"
+      onkeydown="if(event.key==='Enter')doLogin()"
+      style="width:100%;padding:12px;border:1.5px solid #e5e5e5;border-radius:10px;font-size:15px;outline:none;margin-bottom:12px">
+    <button onclick="doLogin()" style="width:100%;padding:13px;background:#c62828;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer">Нэвтрэх</button>
+    <div id="li-err" style="color:#c62828;font-size:13px;text-align:center;margin-top:8px"></div>
+  </div>
+</div>
+<div id="main-wrap" style="display:none">
+<div class="header">
+  <div class="header-title" style="font-size:20px;font-weight:900;color:#c62828;letter-spacing:1px">SR KARAOKE</div>
+  <div style="display:flex;align-items:center;gap:8px">
+    <span id="user-label" style="font-size:12px;color:#999;font-weight:600"></span>
+    <button onclick="doLogout()" style="font-size:12px;color:#c62828;background:none;border:1.5px solid #ffcdd2;border-radius:8px;cursor:pointer;font-weight:600;padding:4px 10px">Гарах</button>
+    <div class="header-time" id="clock"></div>
+  </div>
+</div>
+<div class="tabs">
+  <button class="tab active" onclick="showPage('rooms')">Өрөөнүүд</button>
+  <button class="tab" onclick="showPage('checkin')">Захиалга</button>
+  <button class="tab" onclick="showPage('active')">Идэвхтэй</button>
+  <button class="tab" onclick="showPage('report')">Тайлан</button>
+  <button class="tab" id="menu-tab" style="display:none" onclick="showPage('menu')">🛒 Бараа</button>
+</div>
+<div class="content">
+
+<!-- ROOMS -->
+<div class="page active" id="page-rooms">
+  <div id="alert-area"></div>
+  <div class="section-label">Өнөөдрийн байдал</div>
+  <div class="metrics">
+    <div class="metric"><div class="metric-label">VIP чөлөөтэй</div><div class="metric-val" id="m-vip">3/3</div></div>
+    <div class="metric"><div class="metric-label">Ширээ чөлөөтэй</div><div class="metric-val" id="m-nyt">3/3</div></div>
+    <div class="metric"><div class="metric-label">Өнөөдрийн орлого</div><div class="metric-val" id="m-income">0₮</div></div>
+  </div>
+  <div class="section-label">VIP өрөөнүүд</div>
+  <div class="room-grid" id="vip-grid"></div>
+  <div class="section-label">Нийтийн зал — ширээнүүд</div>
+  <div class="room-grid" id="nyt-grid"></div>
+  <button class="btn btn-primary" style="width:100%;margin-top:14px;padding:14px;font-size:15px" onclick="showPage('checkin')">+ Шинэ захиалга авах</button>
+</div>
+
+<!-- CHECKIN -->
+<div class="page" id="page-checkin">
+  <div class="card">
+    <div class="form-row">
+      <label>Өрөө / ширээ сонгох</label>
+      <select id="sel-room" onchange="onRoomChange()"><option value="">-- сонгох --</option></select>
+    </div>
+    <div id="vip-form">
+      <div class="form-row">
+        <label>Цаг</label>
+        <select id="inp-hours">
+          <option value="1">1 цаг — 20,000₮</option>
+          <option value="2" selected>2 цаг — 40,000₮</option>
+          <option value="3">3 цаг — 60,000₮</option>
+          <option value="4">4 цаг — 80,000₮</option>
+          <option value="5">5 цаг — 100,000₮</option>
+        </select>
+      </div>
+      <div class="section-label" style="margin-top:4px">Package (заавал биш)</div>
+      <div class="pkg-card" id="pkg0" onclick="selectPkg(0)">
+        <div class="pkg-name">Package A — 100,000₮</div>
+        <div class="pkg-desc">2 цаг + Архи 0.5л + 2 ус</div>
+      </div>
+      <div class="pkg-card" id="pkg1" onclick="selectPkg(1)">
+        <div class="pkg-name">Package B — 145,000₮</div>
+        <div class="pkg-desc">3 цаг + Архи 0.7л + 4 ундаа + 1 чипс</div>
+      </div>
+      <div class="pkg-card selected" id="pkg-none" onclick="selectPkg(-1)">
+        <div class="pkg-desc" style="color:#bbb">Package сонгохгүй</div>
+      </div>
+      <div class="section-label" style="margin-top:4px">Урьдчилан захиалга (заавал биш)</div>
+      <div class="cat-tabs" id="pre-cat-tabs"></div>
+      <div id="pre-menu-items" style="max-height:260px;overflow-y:auto"></div>
+      <div id="pre-order-summary" style="display:none" class="total-box" style="margin-top:8px">
+        <div class="total-line"><span>Урьдчилан захиалга</span><span id="pre-order-total">0₮</span></div>
+      </div>
+    </div>
+    <div id="nyt-form" style="display:none">
+      <div class="form-row">
+        <label>Захиалагчийн нэр</label>
+        <input type="text" id="inp-nyt-name" placeholder="Нэр бичнэ үү" autocomplete="off">
+      </div>
+      <div class="form-row">
+        <label>Дуу тоо (3 дуу = 1,000₮)</label>
+        <div class="nyt-song-ctrl">
+          <button class="btn btn-sm" onclick="nytChg(-3)">−</button>
+          <div class="nyt-song-num" id="nyt-song-num">3</div>
+          <button class="btn btn-sm" onclick="nytChg(3)">+</button>
+          <span id="nyt-price" style="font-size:18px;font-weight:700;color:#1a1a1a">1,000₮</span>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:16px">
+      <button class="btn btn-primary" style="flex:1;padding:13px" onclick="startSession()">Эхлүүлэх</button>
+      <button class="btn" style="padding:13px 16px" onclick="showPage('rooms')">Буцах</button>
+    </div>
+  </div>
+</div>
+
+<!-- ACTIVE -->
+<div class="page" id="page-active">
+  <div id="active-list"></div>
+</div>
+
+<!-- REPORT -->
+<div class="page" id="page-report">
+  <div class="section-label">Нийт статистик</div>
+  <div class="report-summary">
+    <div class="metric"><div class="metric-label">Нийт орлого</div><div class="metric-val" id="r-total">0₮</div></div>
+    <div class="metric"><div class="metric-label">Нийт гүйлгээ</div><div class="metric-val" id="r-txn">0</div></div>
+  </div>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+    <div class="section-label" style="margin:0">Гүйлгээний түүх</div>
+    <button class="btn btn-xs btn-danger" onclick="clearHistory()">Устгах</button>
+  </div>
+  <div id="history-list"></div>
+  <div style="margin-top:20px">
+    <button class="btn btn-primary" style="width:100%;padding:14px;font-size:15px" onclick="endOfDay()">📋 Өдөр дуусгах — Тайлан гаргах</button>
+  </div>
+</div>
+
+</div>
+
+
+<!-- CHECKOUT MODAL -->
+<div class="modal-overlay" id="co-modal" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-title">✓ Тооцоо хийх</div>
+    <div id="co-content"></div>
+    <div style="display:flex;gap:8px;margin-top:16px">
+      <button class="btn btn-success" style="flex:1;padding:13px" id="co-confirm-btn">Батлах ✓</button>
+      <button class="btn" style="padding:13px 16px" onclick="document.getElementById('co-modal').classList.remove('open')">Буцах</button>
+    </div>
+  </div>
+</div>
+
+<!-- MENU MANAGEMENT -->
+<div class="page" id="page-menu">
+  <div class="card">
+    <div style="font-size:15px;font-weight:700;margin-bottom:12px">Шинэ ангилал нэмэх</div>
+    <div style="display:flex;gap:8px">
+      <input type="text" id="new-cat-name" placeholder="Ангилалын нэр"
+        style="flex:1;padding:10px 12px;border:1.5px solid #e5e5e5;border-radius:10px;font-size:14px;outline:none">
+      <button class="btn btn-primary btn-sm" onclick="addCategory()">Нэмэх</button>
+    </div>
+  </div>
+  <div id="menu-cat-list"></div>
+</div>
+
+<!-- ORDER MODAL -->
+<div class="modal-overlay" id="order-modal" onclick="closeModal(event)">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modal-title">Захиалга нэмэх</div>
+    <div class="cat-tabs" id="modal-cats"></div>
+    <div id="modal-items"></div>
+    <div style="margin-top:16px">
+      <button class="btn btn-primary" style="width:100%;padding:13px" onclick="closeModal()">Хаах</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const ROOMS=[
+  {id:'vip1',name:'VIP 1',type:'vip',rate:20000},
+  {id:'vip2',name:'VIP 2',type:'vip',rate:20000},
+  {id:'vip3',name:'VIP 3',type:'vip',rate:20000},
+  {id:'nyt1',name:'1-р ширээ',type:'nyt'},
+  {id:'nyt2',name:'2-р ширээ',type:'nyt'},
+  {id:'nyt3',name:'3-р ширээ',type:'nyt'}
+];
+const PACKAGES=[
+  {name:'Package A',price:100000,desc:'2 цаг + Архи 0.5л + 2 ус',hours:2},
+  {name:'Package B',price:145000,desc:'3 цаг + Архи 0.7л + 4 ундаа + 1 чипс',hours:3}
+];
+const MENU=[
+  {cat:'Шар айраг',items:[{n:'Сэнгүр',p:10000},{n:'Tiger',p:10000},{n:'Сэрүүн',p:10000},{n:'Kaltenberg',p:11000},{n:'Нийслэл',p:10000},{n:'Боргио',p:10000},{n:'Heineken',p:12000},{n:'Tsingtao',p:12000},{n:'Cass',p:11000},{n:'Essa',p:10000},{n:'Snow',p:12000},{n:'Terra',p:11000}]},
+  {cat:'Архи',items:[{n:'Соёрхол 0.5л',p:60000},{n:'Соёрхол 0.7л',p:70000},{n:'Экс (ногоон) 0.5л',p:60000},{n:'Экс (ногоон) 0.7л',p:70000},{n:'Экс (зэс) 0.5л',p:60000},{n:'Экс (зэс) 0.7л',p:70000},{n:'Экс (эн) 0.5л',p:60000},{n:'Экс (эн) 0.7л',p:70000},{n:'Экс (40°) 0.5л',p:60000},{n:'Экс (40°) 0.7л',p:70000},{n:'Eden 0.7л',p:95000},{n:'Eden 1л',p:120000},{n:'Хар чингис 0.5л',p:60000},{n:'Хар чингис 0.7л',p:70000},{n:'Алтан чингис 0.5л',p:60000},{n:'Алтан чингис 0.7л',p:70000},{n:'Болор 0.7л',p:75000},{n:'Болор 1л',p:90000},{n:'Elix 0.5л',p:60000},{n:'Elix 0.7л',p:70000},{n:'Velvet 0.7л',p:95000},{n:'Velvet 1л',p:120000},{n:'Номад 0.7л',p:95000},{n:'Номад 1л',p:120000},{n:'Qually 0.5л',p:60000},{n:'Qually 0.7л',p:70000},{n:'Агар 0.5л',p:60000},{n:'Агар 0.7л',p:70000},{n:'Ауруг 0.5л',p:60000},{n:'Ауруг 0.7л',p:70000},{n:'Соёмбо 0.7л',p:60000},{n:'Соёмбо 1л',p:70000},{n:'Evok',p:120000},{n:'Finlandia',p:180000},{n:'Absolute',p:220000},{n:'Danzka',p:250000},{n:'Сөжү',p:20000},{n:'Бөртэ 0.7л',p:60000},{n:'Бөртэ 1л',p:70000}]},
+  {cat:'Дарс',items:[{n:"Sheridan's",p:250000},{n:"Bailey's",p:95000},{n:'Garrone',p:95000},{n:'Merlot',p:95000},{n:'Cream Nobile',p:95000},{n:'Medelin',p:95000},{n:'JP.Chenet',p:95000},{n:'Бордекси',p:95000},{n:"Molly's",p:95000},{n:'Sangri',p:95000},{n:'Medinet',p:95000}]},
+  {cat:'Виски & Жин',items:[{n:'Jagermeister 0.7л',p:220000},{n:'Jagermeister 1л',p:250000},{n:'Jack Daniels 0.7л',p:220000},{n:'Jack Daniels 1л',p:250000},{n:'Ballentines',p:250000},{n:"Gordon's 0.7л",p:130000},{n:"Gordon's 1л",p:160000},{n:'Barrister',p:150000}]},
+  {cat:'Уух зүйлс',items:[{n:'Ундаа',p:5000},{n:'Ус',p:3500},{n:'Моя семья 2л',p:18000},{n:'Моя семья 1л',p:10000}]},
+  {cat:'Амттан',items:[{n:'Мерси',p:45000},{n:'Шоко том',p:25000},{n:'Шоко жижиг',p:15000},{n:'Самар',p:10000},{n:'Чипс',p:18000},{n:'Бохь',p:2500},{n:'Toffifee',p:25000}]}
+];
+
+const fmt=n=>n.toLocaleString()+'₮';
+const mnDate=d=>new Date(d).toLocaleDateString('mn-MN',{year:'numeric',month:'long',day:'numeric',weekday:'short'});
+function workDate(ts){
+  const d=new Date(ts);
+  if(d.getHours()<4){d.setDate(d.getDate()-1);}
+  return d;
+}
+function workDateStr(ts){return workDate(ts).toDateString();}
+function workDateLabel(ts){return workDate(ts).toLocaleDateString('mn-MN',{year:'numeric',month:'long',day:'numeric',weekday:'long'});}
+const mnTime=d=>new Date(d).toLocaleTimeString('mn-MN',{hour:'2-digit',minute:'2-digit'});
+
+function save(){return fetch('/api/state',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessions,history,customMenu})}).catch(()=>{});}
+async function load(){try{const r=await fetch('/api/state',{cache:'no-store'});if(!r.ok)throw new Error('state');const d=await r.json();sessions=d.sessions||{};history=d.history||[];customMenu=d.customMenu||[];}catch(e){sessions={};history=[];customMenu=[];}}
+
+let sessions={},history=[],customMenu=[],currentRole='',currentUser='',selPkg=-1,nytSongs=3,modalRid=null,modalCat=0;
+
+function showPage(p){
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  document.getElementById('page-'+p).classList.add('active');
+  ['rooms','checkin','active','report'].forEach((n,i)=>{if(n===p)document.querySelectorAll('.tab')[i].classList.add('active');});
+  if(p==='rooms')renderRooms();
+  if(p==='checkin'){renderCheckinSelect();selPkg=-1;updatePkgUI();nytSongs=3;updateNytUI();initPreOrder();}
+  if(p==='active')renderActive();
+  if(p==='report')renderReport();
+}
+
+function renderRooms(){
+  let vF=0,nF=0;
+  document.getElementById('vip-grid').innerHTML='';
+  document.getElementById('nyt-grid').innerHTML='';
+  const warnings=[];
+  ROOMS.forEach(r=>{
+    const s=sessions[r.id],occ=!!s;
+    if(r.type==='vip'&&!occ)vF++;
+    if(r.type==='nyt'&&!occ)nF++;
+    const rem=occ&&r.type==='vip'?Math.max(0,Math.floor((s.endTime-Date.now())/60000)):null;
+    const isSoonEnd=rem!==null&&rem<=5&&rem>0;
+    if(isSoonEnd)warnings.push(r.name+': цаг дуусах гэж байна ('+rem+' мин үлдсэн)');
+    const d=document.createElement('div');
+    d.className='room-card'+(occ?(isSoonEnd?' warning':' occupied'):'');
+    d.innerHTML=`<div class="rc-label">${r.type==='vip'?'VIP':'Ширээ'}</div>
+      <div class="room-name">${r.name}</div>
+      <span class="rc-status ${occ?'busy':'free'}">${occ?'Дүүрсэн':'Чөлөөтэй'}</span>
+      <div class="rc-rate">${r.type==='vip'?'20,000₮/цаг':'1,000₮=3дуу'}</div>
+      ${rem!==null?`<div class="rc-timer" id="rt-${r.id}">${rem}мин</div>`:''}
+      ${occ?`<div style="font-size:11px;color:#c62828;margin-top:2px;font-weight:600">${s.name}</div>`:''}`;
+    if(!occ)d.onclick=()=>{document.getElementById('sel-room').value=r.id;onRoomChange();showPage('checkin');};
+    document.getElementById(r.type==='vip'?'vip-grid':'nyt-grid').appendChild(d);
+  });
+  const aa=document.getElementById('alert-area');if(aa)aa.innerHTML=warnings.map(w=>`<div style="background:#ffebee;border:1.5px solid #ffcdd2;border-radius:10px;padding:10px 14px;margin-bottom:8px;font-size:14px;color:#c62828;font-weight:600" class="pulsing">⏰ ${w}</div>`).join('');
+  document.getElementById('m-vip').textContent=vF+'/3';
+  document.getElementById('m-nyt').textContent=nF+'/3';
+  const todayWD=workDateStr(Date.now());
+  const inc=history.filter(h=>workDateStr(h.ts)===todayWD).reduce((a,h)=>a+h.total,0);
+  document.getElementById('m-income').textContent=fmt(inc);
+}
+
+function renderCheckinSelect(){
+  const sel=document.getElementById('sel-room'),prev=sel.value;
+  sel.innerHTML='<option value="">-- сонгох --</option>';
+  const vg=document.createElement('optgroup');vg.label='── VIP өрөөнүүд';
+  const ng=document.createElement('optgroup');ng.label='── Нийтийн зал';
+  ROOMS.forEach(r=>{
+    if(!sessions[r.id]){
+      const o=document.createElement('option');
+      o.value=r.id;o.textContent=r.name;
+      r.type==='vip'?vg.appendChild(o):ng.appendChild(o);
+    }
+  });
+  sel.appendChild(vg);sel.appendChild(ng);
+  if(prev)sel.value=prev;
+  onRoomChange();
+}
+
+function onRoomChange(){
+  const rid=document.getElementById('sel-room').value;
+  const r=ROOMS.find(x=>x.id===rid);
+  const isNyt=r&&r.type==='nyt';
+  document.getElementById('vip-form').style.display=isNyt?'none':'block';
+  document.getElementById('nyt-form').style.display=isNyt?'block':'none';
+}
+
+function nytChg(d){nytSongs=Math.max(3,nytSongs+d);updateNytUI();}
+function updateNytUI(){
+  document.getElementById('nyt-song-num').textContent=nytSongs;
+  document.getElementById('nyt-price').textContent=fmt(Math.ceil(nytSongs/3)*1000);
+}
+
+function selectPkg(i){
+  selPkg=i;updatePkgUI();
+  if(i>=0)document.getElementById('inp-hours').value=PACKAGES[i].hours;
+}
+function updatePkgUI(){
+  [0,1].forEach(i=>{const el=document.getElementById('pkg'+i);if(el)el.classList.toggle('selected',selPkg===i);});
+  const pn=document.getElementById('pkg-none');if(pn)pn.classList.toggle('selected',selPkg===-1);
+}
+
+
+let preOrderFoods = {};
+let preCat = 0;
+
+function initPreOrder(){
+  preOrderFoods = {};
+  preCat = 0;
+  renderPreCats();
+  renderPreItems();
+}
+
+function renderPreCats(){
+  const el = document.getElementById('pre-cat-tabs');
+  if(!el) return;
+  el.innerHTML = getActiveMenu().map((c,i)=>
+    `<button class="cat-btn${preCat===i?' active':''}" onclick="setPreCat(${i})">${c.cat}</button>`
+  ).join('');
+}
+
+function setPreCat(i){ preCat=i; renderPreCats(); renderPreItems(); }
+
+function renderPreItems(){
+  const el = document.getElementById('pre-menu-items');
+  if(!el) return;
+  el.innerHTML = getActiveMenu()[preCat].items.map((item,ii)=>{
+    const key = preCat+'_'+ii;
+    const q = preOrderFoods[key]||0;
+    return `<div class="menu-item">
+      <div><div class="mi-name">${item.n}</div><div class="mi-price">${fmt(item.p)}</div></div>
+      <div class="qty-ctrl">
+        <button class="btn btn-sm" onclick="preChg(${preCat},${ii},-1)">−</button>
+        <div class="qty-val" id="pq-${preCat}-${ii}">${q}</div>
+        <button class="btn btn-sm" onclick="preChg(${preCat},${ii},1)">+</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function preChg(ci,ii,d){
+  const k = ci+'_'+ii;
+  preOrderFoods[k] = Math.max(0,(preOrderFoods[k]||0)+d);
+  const el = document.getElementById('pq-'+ci+'-'+ii);
+  if(el) el.textContent = preOrderFoods[k];
+  updatePreSummary();
+}
+
+function updatePreSummary(){
+  let total = 0;
+  getActiveMenu().forEach((cat,ci)=>cat.items.forEach((item,ii)=>{
+    total += (preOrderFoods[ci+'_'+ii]||0)*item.p;
+  }));
+  const sum = document.getElementById('pre-order-summary');
+  const tot = document.getElementById('pre-order-total');
+  if(sum) sum.style.display = total>0?'block':'none';
+  if(tot) tot.textContent = fmt(total);
+}
+
+function startSession(){
+  const rid=document.getElementById('sel-room').value;
+  if(!rid){alert('Өрөө сонгоно уу');return;}
+  const r=ROOMS.find(x=>x.id===rid);
+  const now=Date.now();
+  if(r.type==='nyt'){
+    const name=document.getElementById('inp-nyt-name').value.trim();
+    sessions[rid]={roomId:rid,room:{id:r.id,name:r.name,type:r.type},type:'nyt',name,songs:nytSongs,basePrice:Math.ceil(nytSongs/3)*1000,startTime:now,foods:{},payMethod:null};
+  } else {
+    const name='Зочин';const pax=1;
+    const hours=parseInt(document.getElementById('inp-hours').value)||1;
+    sessions[rid]={roomId:rid,room:{id:r.id,name:r.name,type:r.type,rate:r.rate},type:'vip',name,pax,hours,startTime:now,endTime:now+hours*3600000,foods:{...preOrderFoods},pkgIdx:selPkg,payMethod:null};
+  }
+  save();showPage('active');
+}
+
+function renderActive(){
+  const el=document.getElementById('active-list');
+  const keys=Object.keys(sessions);
+  if(!keys.length){el.innerHTML='<div class="empty-state"><div class="empty-icon">🎤</div><div style="font-size:15px">Идэвхтэй захиалга байхгүй байна</div></div>';return;}
+  el.innerHTML='';
+  keys.forEach(rid=>{const d=document.createElement('div');d.className='card';d.id='sess-'+rid;d.innerHTML=buildCard(sessions[rid]);el.appendChild(d);});
+}
+
+function buildCard(s){
+  const rem=s.type==='vip'?Math.max(0,Math.floor((s.endTime-Date.now())/60000)):null;
+  const roomCharge=s.type==='nyt'?s.basePrice:(s.pkgIdx>=0?PACKAGES[s.pkgIdx].price:s.room.rate*s.hours);
+  let foodTotal=0;const fi=[];
+  getActiveMenu().forEach((cat,ci)=>cat.items.forEach((item,ii)=>{const q=s.foods[ci+'_'+ii]||0;if(q>0){foodTotal+=q*item.p;fi.push(q+'x '+item.n);}}));
+  const total=roomCharge+foodTotal;
+  const pm=s.payMethod;
+  return `
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+      <div>
+        <div class="sess-name">${s.room.name} — ${s.name}</div>
+        ${s.type==='vip'?`<div class="sess-sub">${s.pax} хүн · ${s.hours} цаг</div>`:''}
+        ${s.pkgIdx>=0?`<div style="font-size:12px;color:#e65100;margin-top:2px;font-weight:600">${PACKAGES[s.pkgIdx].name}</div>`:''}
+        ${s.type==='nyt'?`<div class="sess-sub">${s.songs} дуу захиалсан</div>`:''}
+        ${fi.length?`<div class="food-summary">${fi.join(' · ')}</div>`:''}
+      </div>
+      ${rem!==null?`<div style="text-align:right">
+        <div class="timer-big ${rem<15?'timer-warn':''}" id="timer-${s.roomId}">${rem}</div>
+        <div style="font-size:11px;color:#999;margin-top:1px">мин үлдсэн</div>
+        <button class="btn btn-info btn-xs" style="margin-top:6px" onclick="addTime('${s.roomId}')">+ Цаг нэмэх</button>
+      </div>`:''}
+    </div>
+    <div class="total-box">
+      <div class="total-line"><span>${s.type==='nyt'?'Дуу захиалга':(s.pkgIdx>=0?PACKAGES[s.pkgIdx].name:'Өрөөний төлбөр')}</span><span>${fmt(roomCharge)}</span></div>
+      <div class="total-line"><span>Бусад</span><span>${fmt(foodTotal)}</span></div>
+      <div class="total-line big"><span>Нийт дүн</span><span>${fmt(total)}</span></div>
+    </div>
+    <div class="divider"></div>
+    <div style="font-size:12px;color:#999;font-weight:700;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px">Төлбөрийн хэлбэр</div>
+    <div class="pay-row">
+      <button class="pay-btn${pm==='cash'?' selected':''}" onclick="setPay('${s.roomId}','cash')">💵 Бэлэн</button>
+      <button class="pay-btn${pm==='qpay'?' selected':''}" onclick="setPay('${s.roomId}','qpay')">📱 QPay</button>
+      <button class="pay-btn${pm==='card'?' selected':''}" onclick="setPay('${s.roomId}','card')">💳 Карт</button>
+    </div>
+    <div class="action-row">
+      <button class="btn btn-warn" onclick="openModal('${s.roomId}')">+ Захиалга нэмэх</button>
+      <button class="btn btn-success" onclick="openCheckout('${s.roomId}')">✓ Тооцоо хийх</button>
+    </div>`;
+}
+
+function addTime(rid){
+  const s=sessions[rid];if(!s)return;
+  const add=parseInt(prompt('Хэдэн цаг нэмэх вэ?','1'));
+  if(!add||add<1||isNaN(add))return;
+  s.hours=(s.hours||0)+add;s.endTime+=add*3600000;
+  save();renderActive();
+}
+
+function setPay(rid,m){if(!sessions[rid])return;sessions[rid].payMethod=m;save();renderActive();}
+
+function openModal(rid){
+  modalRid=rid;modalCat=0;
+  document.getElementById('modal-title').textContent=sessions[rid].room.name+' — захиалга нэмэх';
+  renderModalCats();renderModalItems();
+  document.getElementById('order-modal').classList.add('open');
+}
+
+function closeModal(e){
+  if(!e||e.target===document.getElementById('order-modal')){
+    document.getElementById('order-modal').classList.remove('open');
+    renderActive();
+  }
+}
+
+function renderModalCats(){
+  document.getElementById('modal-cats').innerHTML=getActiveMenu().map((c,i)=>
+    `<button class="cat-btn${modalCat===i?' active':''}" onclick="setMCat(${i})">${c.cat}</button>`).join('');
+}
+function setMCat(i){modalCat=i;renderModalCats();renderModalItems();}
+function renderModalItems(){
+  const s=sessions[modalRid];
+  document.getElementById('modal-items').innerHTML=getActiveMenu()[modalCat].items.map((item,ii)=>{
+    const key=modalCat+'_'+ii,q=s?s.foods[key]||0:0;
+    return `<div class="menu-item">
+      <div><div class="mi-name">${item.n}</div><div class="mi-price">${fmt(item.p)}</div></div>
+      <div class="qty-ctrl">
+        <button class="btn btn-sm" onclick="mChg(${modalCat},${ii},-1)">−</button>
+        <div class="qty-val" id="mq-${modalCat}-${ii}">${q}</div>
+        <button class="btn btn-sm" onclick="mChg(${modalCat},${ii},1)">+</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function mChg(ci,ii,d){
+  const s=sessions[modalRid];if(!s)return;
+  const k=ci+'_'+ii;s.foods[k]=Math.max(0,(s.foods[k]||0)+d);
+  const el=document.getElementById('mq-'+ci+'-'+ii);if(el)el.textContent=s.foods[k];
+  save();
+}
+
+function checkout(rid){
+  const s=sessions[rid];if(!s)return;
+  if(!s.payMethod){alert('Төлбөрийн хэлбэр сонгоно уу');return;}
+  const roomCharge=s.type==='nyt'?s.basePrice:(s.pkgIdx>=0?PACKAGES[s.pkgIdx].price:s.room.rate*s.hours);
+  let foodTotal=0;const fi=[];
+  getActiveMenu().forEach((cat,ci)=>cat.items.forEach((item,ii)=>{const q=s.foods[ci+'_'+ii]||0;if(q>0){foodTotal+=q*item.p;fi.push(q+'x '+item.n);}}));
+  const total=roomCharge+foodTotal;
+  const payL={cash:'Бэлэн',qpay:'QPay',card:'Карт'};
+  if(!confirm(`${s.room.name} — ${s.name}\nНийт: ${fmt(total)}\nТөлбөр: ${payL[s.payMethod]}\n\nТооцоо хийх үү?`))return;
+  history.unshift({room:s.room.name,name:s.name,roomCharge,foodTotal,total,foodItems:fi,payMethod:payL[s.payMethod],ts:Date.now()});
+  delete sessions[rid];
+  save();showPage('rooms');
+}
+
+function renderReport(){
+  const totalInc=history.reduce((a,h)=>a+h.total,0);
+  document.getElementById('r-total').textContent=fmt(totalInc);
+  document.getElementById('r-txn').textContent=history.length;
+  const el=document.getElementById('history-list');
+  if(!history.length){el.innerHTML='<div class="empty-state"><div>Гүйлгээ байхгүй байна</div></div>';return;}
+  // Group by date
+  const groups={};
+  history.forEach(h=>{
+    const dk=workDateStr(h.ts);
+    if(!groups[dk])groups[dk]={label:workDateLabel(h.ts),items:[],total:0};
+    groups[dk].items.push(h);groups[dk].total+=h.total;
+  });
+  el.innerHTML=Object.values(groups).map(g=>`
+    <div class="date-group">
+      <div class="date-header">
+        <span>${g.label}</span>
+        <span class="date-income">${fmt(g.total)}</span>
+      </div>
+      ${g.items.map(h=>`<div class="history-row">
+        <div>
+          <div class="hr-name">${h.room} — ${h.name}</div>
+          <div class="hr-detail">${mnTime(h.ts)} · ${h.payMethod}${h.foodItems.length?' · '+h.foodItems.join(', '):''}</div>
+        </div>
+        <div class="hr-amount">${fmt(h.total)}</div>
+      </div>`).join('')}
+    </div>`).join('');
+}
+
+
+function endOfDay(){
+  const today = new Date();
+  const todayWDS = workDateStr(Date.now());
+  const todayH = history.filter(h => workDateStr(h.ts) === todayWDS);
+  if(!todayH.length){ alert('Өнөөдөр гүйлгээ байхгүй байна.'); return; }
+  
+  const totalInc = todayH.reduce((a,h) => a+h.total, 0);
+  const cashInc = todayH.filter(h=>h.payMethod==='Бэлэн').reduce((a,h)=>a+h.total,0);
+  const qpayInc = todayH.filter(h=>h.payMethod==='QPay').reduce((a,h)=>a+h.total,0);
+  const cardInc = todayH.filter(h=>h.payMethod==='Карт').reduce((a,h)=>a+h.total,0);
+  const dateLabel = workDateLabel(Date.now());
+  
+  const rows = todayH.map((h,i) => {
+    const t = new Date(h.ts).toLocaleTimeString('mn-MN',{hour:'2-digit',minute:'2-digit'});
+    const foods = h.foodItems && h.foodItems.length ? h.foodItems.join(', ') : '—';
+    return `<tr>
+      <td style="padding:8px 10px;border-bottom:1px solid #eee;color:#666;font-size:13px">${i+1}</td>
+      <td style="padding:8px 10px;border-bottom:1px solid #eee;font-weight:600">${h.room}</td>
+      <td style="padding:8px 10px;border-bottom:1px solid #eee">${h.name}</td>
+      <td style="padding:8px 10px;border-bottom:1px solid #eee;color:#666;font-size:13px">${t}</td>
+      <td style="padding:8px 10px;border-bottom:1px solid #eee;color:#666;font-size:12px">${foods}</td>
+      <td style="padding:8px 10px;border-bottom:1px solid #eee;color:#666;font-size:13px">${h.payMethod}</td>
+      <td style="padding:8px 10px;border-bottom:1px solid #eee;font-weight:700;text-align:right">${fmt(h.total)}</td>
+    </tr>`;
+  }).join('');
+
+  const html = `<!DOCTYPE html>
+<html lang="mn">
+<head>
+<meta charset="UTF-8">
+<title>Karaoke Тайлан — ${dateLabel}</title>
+<style>
+  body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;padding:30px;color:#1a1a1a;max-width:900px;margin:0 auto}
+  h1{font-size:22px;font-weight:700;margin-bottom:4px}
+  .date{font-size:15px;color:#666;margin-bottom:30px}
+  .summary{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:30px}
+  .sum-card{background:#f9f9f9;border-radius:12px;padding:16px;text-align:center}
+  .sum-label{font-size:12px;color:#999;font-weight:600;text-transform:uppercase;margin-bottom:6px}
+  .sum-val{font-size:20px;font-weight:800;color:#1a1a1a}
+  .sum-val.green{color:#2e7d32}
+  table{width:100%;border-collapse:collapse;margin-bottom:30px}
+  thead tr{background:#f5f5f5}
+  th{padding:10px;text-align:left;font-size:13px;color:#666;font-weight:600;border-bottom:2px solid #eee}
+  th:last-child{text-align:right}
+  .total-row td{padding:12px 10px;font-weight:700;font-size:16px;border-top:2px solid #1a1a1a}
+  .total-row td:last-child{text-align:right;font-size:18px;color:#1a1a1a}
+  .footer{font-size:12px;color:#bbb;text-align:center;margin-top:20px}
+  @media print{.no-print{display:none}body{padding:15px}}
+</style>
+</head>
+<body>
+<h1>🎤 Karaoke — Өдрийн тайлан</h1>
+<div class="date">${dateLabel}</div>
+<div class="summary">
+  <div class="sum-card"><div class="sum-label">Нийт орлого</div><div class="sum-val green">${fmt(totalInc)}</div></div>
+  <div class="sum-card"><div class="sum-label">💵 Бэлэн</div><div class="sum-val">${fmt(cashInc)}</div></div>
+  <div class="sum-card"><div class="sum-label">📱 QPay</div><div class="sum-val">${fmt(qpayInc)}</div></div>
+  <div class="sum-card"><div class="sum-label">💳 Карт</div><div class="sum-val">${fmt(cardInc)}</div></div>
+</div>
+<table>
+  <thead>
+    <tr>
+      <th>#</th><th>Өрөө</th><th>Нэр</th><th>Цаг</th><th>Захиалга</th><th>Төлбөр</th><th style="text-align:right">Дүн</th>
+    </tr>
+  </thead>
+  <tbody>${rows}</tbody>
+  <tfoot>
+    <tr class="total-row">
+      <td colspan="6">Нийт (${todayH.length} гүйлгээ)</td>
+      <td>${fmt(totalInc)}</td>
+    </tr>
+  </tfoot>
+</table>
+<div class="footer">Karaoke систем — ${new Date().toLocaleString('mn-MN')}</div>
+<div class="no-print" style="text-align:center;margin-top:20px">
+  <button onclick="window.print()" style="padding:12px 30px;background:#1a1a1a;color:#fff;border:none;border-radius:10px;font-size:15px;cursor:pointer;margin-right:10px">🖨️ Хэвлэх / PDF хадгалах</button>
+  <button onclick="window.close()" style="padding:12px 20px;background:#f5f5f5;border:1px solid #ddd;border-radius:10px;font-size:15px;cursor:pointer">Хаах</button>
+</div>
+</div><!-- /main-wrap -->
+</body>
+</html>`;
+
+  const blob = new Blob([html], {type: 'text/html'});
+  const url = URL.createObjectURL(blob);
+  const w = window.open(url, '_blank');
+  if(!w) {
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'karaoke-taillan-' + today.toISOString().slice(0,10) + '.html';
+    a.click();
+  }
+}
+
+
+let coRid=null, coDiscType='percent';
+
+function openCheckout(rid){
+  const s=sessions[rid];if(!s)return;
+  coRid=rid; coDiscType='percent';
+  const roomCharge=s.type==='nyt'?s.basePrice:(s.pkgIdx>=0?PACKAGES[s.pkgIdx].price:s.room.rate*s.hours);
+  // Build food items list with edit capability
+  let foodTotal=0;
+  const foodRows=[];
+  getActiveMenu().forEach((cat,ci)=>cat.items.forEach((item,ii)=>{
+    const q=(s.foods||{})[ci+'_'+ii]||0;
+    if(q>0){foodTotal+=q*item.p;foodRows.push({ci,ii,n:item.n,p:item.p,q});}
+  }));
+  const subtotal=roomCharge+foodTotal;
+
+  const itemsHtml=foodRows.map(r=>`
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f0f0f0">
+      <div>
+        <div style="font-size:14px;font-weight:500">${r.n}</div>
+        <div style="font-size:12px;color:#999">${r.q} × ${fmt(r.p)}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button class="btn btn-sm" onclick="coChg(${r.ci},${r.ii},-1)">−</button>
+        <span id="coq-${r.ci}-${r.ii}" style="min-width:20px;text-align:center;font-weight:700">${r.q}</span>
+        <button class="btn btn-sm" onclick="coChg(${r.ci},${r.ii},1)">+</button>
+        <span style="min-width:70px;text-align:right;font-size:14px;font-weight:600" id="coamt-${r.ci}-${r.ii}">${fmt(r.q*r.p)}</span>
+      </div>
+    </div>`).join('');
+
+  document.getElementById('co-content').innerHTML=`
+    <div style="background:#f9f9f9;border-radius:12px;padding:14px;margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;font-size:14px;padding:4px 0;color:#666">
+        <span>${s.type==='nyt'?'Дуу захиалга':(s.pkgIdx>=0?PACKAGES[s.pkgIdx].name:'Өрөөний төлбөр')}</span>
+        <span>${fmt(roomCharge)}</span>
+      </div>
+    </div>
+    ${foodRows.length?`
+    <div style="font-size:13px;font-weight:700;color:#666;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px">Захиалсан бараа (засах боломжтой)</div>
+    <div id="co-items" style="margin-bottom:14px">${itemsHtml}</div>
+    `:''}
+    <div style="font-size:13px;font-weight:700;color:#666;margin-bottom:8px">Хямдрал (заавал биш)</div>
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px">
+      <button id="co-pct-btn" onclick="setCoDisc('percent')" style="padding:7px 16px;border-radius:8px;font-size:13px;cursor:pointer;border:1.5px solid #1a1a1a;background:#1a1a1a;color:#fff;font-weight:600">%</button>
+      <button id="co-amt-btn" onclick="setCoDisc('amount')" style="padding:7px 16px;border-radius:8px;font-size:13px;cursor:pointer;border:1.5px solid #e5e5e5;background:#fff;color:#666;font-weight:600">₮</button>
+      <input type="number" id="co-disc" placeholder="0" min="0" inputmode="numeric"
+        style="flex:1;padding:10px 12px;border:1.5px solid #e5e5e5;border-radius:10px;font-size:15px;outline:none"
+        oninput="updateCoTotal()">
+    </div>
+    <div style="background:#f9f9f9;border-radius:12px;padding:14px">
+      <div style="display:flex;justify-content:space-between;font-size:14px;padding:3px 0;color:#666"><span>Бусад</span><span id="co-food-show">${fmt(foodTotal)}</span></div>
+      <div id="co-disc-line" style="display:none;justify-content:space-between;font-size:14px;padding:3px 0;color:#2e7d32"><span>Хямдрал</span><span id="co-disc-show">0₮</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:20px;font-weight:700;color:#1a1a1a;border-top:1px solid #e5e5e5;padding-top:10px;margin-top:6px"><span>Нийт төлөх</span><span id="co-total-show">${fmt(subtotal)}</span></div>
+    </div>`;
+  document.getElementById('co-confirm-btn').onclick=()=>doCheckout();
+  document.getElementById('co-modal').classList.add('open');
+}
+
+function coChg(ci,ii,d){
+  const s=sessions[coRid];if(!s)return;
+  const k=ci+'_'+ii;
+  if(!s.foods)s.foods={};
+  s.foods[k]=Math.max(0,(s.foods[k]||0)+d);
+  // update qty display
+  const qel=document.getElementById('coq-'+ci+'-'+ii);
+  const ael=document.getElementById('coamt-'+ci+'-'+ii);
+  if(qel)qel.textContent=s.foods[k];
+  if(ael)ael.textContent=s.foods[k]>0?fmt(s.foods[k]*getActiveMenu()[ci].items[ii].p):'0₮';
+  // recalc food total
+  let ft=0;
+  MENU.forEach((cat,c)=>cat.items.forEach((item,i)=>{ft+=((s.foods||{})[c+'_'+i]||0)*item.p;}));
+  const el=document.getElementById('co-food-show');if(el)el.textContent=fmt(ft);
+  save();
+  updateCoTotal();
+}
+
+function setCoDisc(t){
+  coDiscType=t;
+  const pb=document.getElementById('co-pct-btn'),ab=document.getElementById('co-amt-btn');
+  if(pb){pb.style.background=t==='percent'?'#1a1a1a':'#fff';pb.style.color=t==='percent'?'#fff':'#666';pb.style.borderColor=t==='percent'?'#1a1a1a':'#e5e5e5';}
+  if(ab){ab.style.background=t==='amount'?'#1a1a1a':'#fff';ab.style.color=t==='amount'?'#fff':'#666';ab.style.borderColor=t==='amount'?'#1a1a1a':'#e5e5e5';}
+  updateCoTotal();
+}
+
+function updateCoTotal(){
+  const s=sessions[coRid];if(!s)return;
+  const rc=s.type==='nyt'?s.basePrice:(s.pkgIdx>=0?PACKAGES[s.pkgIdx].price:s.room.rate*s.hours);
+  let ft=0;getActiveMenu().forEach((cat,ci)=>cat.items.forEach((item,ii)=>{ft+=((s.foods||{})[ci+'_'+ii]||0)*item.p;}));
+  const sub=rc+ft;
+  const val=parseFloat(document.getElementById('co-disc').value)||0;
+  let disc=coDiscType==='percent'?Math.round(sub*val/100):val;
+  disc=Math.max(0,Math.min(disc,sub));
+  const dl=document.getElementById('co-disc-line'),ds=document.getElementById('co-disc-show'),ts=document.getElementById('co-total-show');
+  if(dl)dl.style.display=disc>0?'flex':'none';
+  if(ds)ds.textContent='−'+fmt(disc);
+  if(ts)ts.textContent=fmt(sub-disc);
+}
+
+function doCheckout(){
+  const s=sessions[coRid];if(!s)return;
+  if(!s.payMethod){alert('Идэвхтэй захиалга дээр төлбөрийн хэлбэр сонгоно уу');document.getElementById('co-modal').classList.remove('open');return;}
+  const rc=s.type==='nyt'?s.basePrice:(s.pkgIdx>=0?PACKAGES[s.pkgIdx].price:s.room.rate*s.hours);
+  let ft=0;const fi=[];
+  getActiveMenu().forEach((cat,ci)=>cat.items.forEach((item,ii)=>{const q=(s.foods||{})[ci+'_'+ii]||0;if(q>0){ft+=q*item.p;fi.push(q+'x '+item.n);}}));
+  const sub=rc+ft;
+  const val=parseFloat(document.getElementById('co-disc').value)||0;
+  let disc=coDiscType==='percent'?Math.round(sub*val/100):val;
+  disc=Math.max(0,Math.min(disc,sub));
+  const total=sub-disc;
+  const payL={cash:'Бэлэн',qpay:'QPay',card:'Карт'};
+  history.unshift({room:s.room.name,name:s.name||'Зочин',roomCharge:rc,foodTotal:ft,discount:disc,total,foodItems:fi,payMethod:payL[s.payMethod],ts:Date.now()});
+  delete sessions[coRid];
+  save();
+  document.getElementById('co-modal').classList.remove('open');
+  showPage('rooms');
+}
+
+function clearHistory(){
+  if(!confirm('Бүх түүхийг устгах уу? Энэ үйлдлийг буцааж болохгүй!'))return;
+  history=[];save();renderReport();
+}
+
+function updateClock(){
+  const n=new Date();
+  document.getElementById('clock').textContent=n.toLocaleTimeString('mn-MN',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  Object.keys(sessions).forEach(rid=>{
+    const s=sessions[rid];if(s.type!=='vip')return;
+    const rem=Math.max(0,Math.floor((s.endTime-Date.now())/60000));
+    const t=document.getElementById('timer-'+rid);
+    if(t){t.textContent=rem;t.className='timer-big'+(rem<=5?' timer-warn':'');}
+    const rt=document.getElementById('rt-'+rid);if(rt)rt.textContent=rem+'мин';
+  });
+}
+
+
+// ===== LOGIN =====
+async function doLogout(){
+  if(!confirm('Гарах уу?'))return;
+  try{await fetch('/api/logout',{method:'POST'});}catch(e){}
+  currentUser='';currentRole='';
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('main-wrap').style.display='none';
+  document.getElementById('li-user').value='';
+  document.getElementById('li-pass').value='';
+  document.getElementById('li-err').textContent='';
+}
+
+async function doLogin(){
+  const u=document.getElementById('li-user').value.trim().toLowerCase();
+  const p=document.getElementById('li-pass').value;
+  try{
+    const r=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})});
+    const d=await r.json();
+    if(!r.ok) throw new Error(d.error||'login');
+    currentUser=d.username;currentRole=d.role;
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('main-wrap').style.display='block';
+    const ul=document.getElementById('user-label');if(ul)ul.textContent=d.username;
+    applyRole();
+    await load();
+    renderRooms();
+  }catch(e){
+    document.getElementById('li-err').textContent='Нэр эсвэл нууц үг буруу байна';
+  }
+}
+
+async function checkAuth(){
+  try{
+    const r=await fetch('/api/me',{cache:'no-store'});
+    if(!r.ok) return false;
+    const d=await r.json();
+    currentUser=d.username||'';currentRole=d.role||'';
+    return !!currentUser;
+  }catch(e){
+    return false;
+  }
+}
+
+function applyRole(){
+  const mt=document.getElementById('menu-tab');
+  if(mt)mt.style.display=currentRole==='admin'?'':'none';
+}
+
+// ===== MENU MANAGEMENT =====
+function getActiveMenu(){
+  const base=MENU.map(cat=>({cat:cat.cat,items:cat.items.map(i=>({...i})),isBase:true}));
+  customMenu.forEach(cm=>{
+    const existing=base.find(b=>b.cat===cm.cat);
+    if(existing){
+      if(cm.priceOverrides)Object.entries(cm.priceOverrides).forEach(([idx,p])=>{if(existing.items[idx])existing.items[idx].p=p;});
+      if(cm.nameOverrides)Object.entries(cm.nameOverrides).forEach(([idx,n])=>{if(existing.items[idx])existing.items[idx].n=n;});
+      if(cm.hiddenItems)cm.hiddenItems.forEach(idx=>{if(existing.items[idx])existing.items[idx]._hidden=true;});
+      cm.items.forEach(item=>{if(!existing.items.find(i=>i.n===item.n))existing.items.push({...item});});
+    } else {
+      base.push({cat:cm.cat,items:cm.items.map(i=>({...i})),isBase:false});
+    }
+  });
+  base.forEach(cat=>{cat.items=cat.items.filter(i=>!i._hidden);});
+  return base;
+}
+
+function renderMenuPage(){
+  const el=document.getElementById('menu-cat-list');
+  if(!el)return;
+  const allCats=getActiveMenu();
+  el.innerHTML=`<div style="display:flex;justify-content:flex-end;margin-bottom:12px">
+    <button class="btn btn-success" id="save-menu-btn" onclick="saveMenuChanges()" style="padding:10px 24px;font-size:14px;font-weight:700">💾 Хадгалах</button>
+  </div>`+allCats.map(cat=>{
+    const custCat=customMenu.find(c=>c.cat===cat.cat);
+    const customItems=custCat?custCat.items:[];
+    const safeId=cat.cat.replace(/[^a-zA-Z0-9]/g,'_');
+    const baseItemsHtml=cat.isBase?cat.items.map((item,idx)=>`
+      <div style="display:flex;align-items:center;gap:6px;padding:7px 0;border-bottom:1px solid #f5f5f5">
+        <input type="text" value="${item.n}" data-type="base-name" data-cat="${cat.cat}" data-idx="${idx}"
+          style="flex:2;padding:6px 8px;border:1.5px solid #e5e5e5;border-radius:8px;font-size:13px;outline:none">
+        <input type="number" value="${item.p}" data-type="base-price" data-cat="${cat.cat}" data-idx="${idx}"
+          style="flex:1;max-width:90px;padding:6px 8px;border:1.5px solid #e5e5e5;border-radius:8px;font-size:13px;outline:none;text-align:right">
+        <span style="font-size:12px;color:#999;min-width:10px">₮</span>
+        <button class="btn btn-xs btn-danger" onclick="hideBaseItem('${cat.cat}',${idx})">Устгах</button>
+      </div>`).join(''):'';
+    const customItemsHtml=customItems.map((item,idx)=>`
+      <div style="display:flex;align-items:center;gap:6px;padding:7px 0;border-bottom:1px solid #f5f5f5">
+        <input type="text" value="${item.n}" data-type="custom-name" data-cat="${cat.cat}" data-idx="${idx}"
+          style="flex:2;padding:6px 8px;border:1.5px solid #e5e5e5;border-radius:8px;font-size:13px;outline:none">
+        <input type="number" value="${item.p}" data-type="custom-price" data-cat="${cat.cat}" data-idx="${idx}"
+          style="flex:1;max-width:90px;padding:6px 8px;border:1.5px solid #e5e5e5;border-radius:8px;font-size:13px;outline:none;text-align:right">
+        <span style="font-size:12px;color:#999;min-width:10px">₮</span>
+        <button class="btn btn-xs btn-danger" onclick="removeItem('${cat.cat}','${item.n}')">Устгах</button>
+      </div>`).join('');
+    return `<div class="card" style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div style="font-size:15px;font-weight:700">${cat.cat}${!cat.isBase?' <span style="font-size:11px;background:#e8f5e9;color:#2e7d32;padding:2px 7px;border-radius:6px">Шинэ</span>':''}</div>
+        ${!cat.isBase?`<button class="btn btn-xs btn-danger" onclick="removeCategory('${cat.cat}')">Ангилал устгах</button>`:''}
+      </div>
+      ${baseItemsHtml}${customItemsHtml}
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <input type="text" id="ni-name-${safeId}" placeholder="Шинэ барааны нэр"
+          style="flex:2;padding:8px 10px;border:1.5px solid #e5e5e5;border-radius:8px;font-size:13px;outline:none">
+        <input type="number" id="ni-price-${safeId}" placeholder="Үнэ" min="0"
+          style="flex:1;padding:8px 10px;border:1.5px solid #e5e5e5;border-radius:8px;font-size:13px;outline:none">
+        <button class="btn btn-sm btn-success" onclick="addItem('${cat.cat}')">+ Нэмэх</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function saveMenuChanges(){
+  const el=document.getElementById('menu-cat-list');
+  if(!el)return;
+  el.querySelectorAll('input[data-type]').forEach(inp=>{
+    const type=inp.getAttribute('data-type');
+    const cat=inp.getAttribute('data-cat');
+    const idx=parseInt(inp.getAttribute('data-idx'));
+    const val=inp.value.trim();
+    if(type==='base-price'){
+      const p=parseInt(val);if(isNaN(p)||p<=0)return;
+      let cm=customMenu.find(c=>c.cat===cat);
+      if(!cm){cm={cat,items:[],priceOverrides:{}};customMenu.push(cm);}
+      if(!cm.priceOverrides)cm.priceOverrides={};
+      cm.priceOverrides[idx]=p;
+    } else if(type==='base-name'){
+      let cm=customMenu.find(c=>c.cat===cat);
+      if(!cm){cm={cat,items:[],nameOverrides:{}};customMenu.push(cm);}
+      if(!cm.nameOverrides)cm.nameOverrides={};
+      if(val)cm.nameOverrides[idx]=val;
+    } else if(type==='custom-price'){
+      const p=parseInt(val);if(isNaN(p)||p<=0)return;
+      const cm=customMenu.find(c=>c.cat===cat);
+      if(cm&&cm.items[idx])cm.items[idx].p=p;
+    } else if(type==='custom-name'){
+      const cm=customMenu.find(c=>c.cat===cat);
+      if(cm&&cm.items[idx]&&val)cm.items[idx].n=val;
+    }
+  });
+  save();
+  const btn=document.getElementById('save-menu-btn');
+  if(btn){const orig=btn.innerHTML;btn.innerHTML='✅ Хадгалагдлаа!';setTimeout(()=>{btn.innerHTML=orig;renderMenuPage();},1500);}
+}
+
+function hideBaseItem(catName,idx){
+  if(!confirm('Энэ барааг устгах уу? Сэргээх боломжгүй!'))return;
+  let cm=customMenu.find(c=>c.cat===catName);
+  if(!cm){cm={cat:catName,items:[]};customMenu.push(cm);}
+  if(!cm.hiddenItems)cm.hiddenItems=[];
+  if(!cm.hiddenItems.includes(idx))cm.hiddenItems.push(idx);
+  save();renderMenuPage();
+}
+
+function addCategory(){
+  const name=document.getElementById('new-cat-name').value.trim();
+  if(!name)return;
+  if(customMenu.find(c=>c.cat===name)||MENU.find(c=>c.cat===name)){alert('Ангилал аль хэдийн байна');return;}
+  customMenu.push({cat:name,items:[]});
+  document.getElementById('new-cat-name').value='';
+  save();renderMenuPage();
+}
+
+function removeCategory(catName){
+  if(!confirm(catName+' ангилалыг устгах уу?'))return;
+  customMenu=customMenu.filter(c=>c.cat!==catName);
+  save();renderMenuPage();
+}
+
+function addItem(catName){
+  const safeId=catName.replace(/[^a-zA-Z0-9]/g,'_');
+  const ne=document.getElementById('ni-name-'+safeId);
+  const pe=document.getElementById('ni-price-'+safeId);
+  const n=ne?ne.value.trim():'';
+  const p=parseInt(pe?pe.value:0);
+  if(!n||!p||p<=0){alert('Нэр болон үнэ оруулна уу');return;}
+  let cat=customMenu.find(c=>c.cat===catName);
+  if(!cat){cat={cat:catName,items:[]};customMenu.push(cat);}
+  cat.items.push({n,p});
+  if(ne)ne.value='';if(pe)pe.value='';
+  save();renderMenuPage();
+}
+
+function removeItem(catName,itemName){
+  const cat=customMenu.find(c=>c.cat===catName);
+  if(cat)cat.items=cat.items.filter(i=>i.n!==itemName);
+  save();renderMenuPage();
+}
+
+// Patch showPage to handle menu tab
+const _sp=showPage;
+showPage=function(p){_sp(p);if(p==='menu')renderMenuPage();};
+
+async function initApp(){
+  const ok=await checkAuth();
+  if(ok){
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('main-wrap').style.display='block';
+    const ul=document.getElementById('user-label');if(ul)ul.textContent=currentUser;
+    applyRole();
+    await load();
+    renderRooms();
+    setInterval(updateClock,1000);
+    updateClock();
+  }else{
+    document.getElementById('login-screen').style.display='flex';
+    document.getElementById('main-wrap').style.display='none';
+  }
+}
+
+initApp();
+</script>
+</div><!-- /main-wrap -->
+</body>
+</html>
